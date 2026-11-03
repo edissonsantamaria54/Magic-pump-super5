@@ -1,0 +1,34 @@
+name: Build Magic Pump 24/7 APK
+
+on:
+  workflow_dispatch:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get source code
+        uses: actions/checkout@v4
+
+      - name: Make workspace writable
+        run: chmod -R a+rwX "${{ github.workspace }}"
+
+      - name: Build APK in Kivy image
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/home/user/hostcwd" \
+            -w /home/user/hostcwd \
+            --entrypoint /bin/bash \
+            kivy/buildozer:latest \
+            -c 'cd /home/user/hostcwd && python3 -m pip install "Cython==0.29.34" && cython --version && yes | buildozer android debug'
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MagicPump-24x7-debug-APK
+          path: bin/*.apk
+          if-no-files-found: error
